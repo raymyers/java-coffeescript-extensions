@@ -17,7 +17,6 @@ public class ServletContextPatternResolver {
 	}
 
 	public Set<String> getResourcePaths(String pattern) {
-		
 		return getResourcePathsFromRoot("/", pattern);
 	}
 	

@@ -1,52 +1,100 @@
 package com.cadrlife.coffee.concat;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import com.cadrlife.coffee.VirtualFile;
+import com.google.common.collect.Lists;
+import com.google.common.io.Resources;
+
 import static org.junit.Assert.assertEquals;
 
 public class CoffeescriptConcatTest {
 
+	CoffeescriptConcatenate concat;
+	List<VirtualFile> rootFiles;
+	List<VirtualFile> includeFiles;
+	VirtualFile noDeps;
+	VirtualFile animal;
+	String noDepsString;
+	String animalString;
+	VirtualFile snake;
+	String snakeString;
+	VirtualFile python;
+	String pythonString;
+	VirtualFile requireDirective;
+	
 	@Before
-	public void setup() {
+	public void setup() throws Exception {
+		concat = new CoffeescriptConcatenate();
+		rootFiles = Lists.newArrayList();
+		includeFiles = Lists.newArrayList();
+		noDeps = classpathFile("no-deps.coffee");
+		animal = classpathFile("animal.coffee");
+		snake = classpathFile("snake.coffee");
+		python = classpathFile("python.coffee");
+		requireDirective = classpathFile("require-directive.coffee");
 		
+		noDepsString = noDeps.readToString();
+		animalString = animal.readToString();
+		snakeString = snake.readToString();
+		pythonString = python.readToString();
 	}
 	
 	@Test
-	public void findClasses() {
-		List<String> classDefs = new CoffeescriptConcat().findClasses("class Horse extends Animal\nclass Animal");
-		assertEquals("Horse", classDefs.get(0));
-		assertEquals("Animal", classDefs.get(1));
+	public void shouldCompileZeroFiles() throws Exception {
+		assertEquals("", concat());
 	}
 	
 	@Test
-	public void findClassDependenciesForSuperclasses() {
-		List<String> classDefs = new CoffeescriptConcat().findClassDependencies("class Horse extends Animal\nclass Animal");
-		assertEquals("Animal", classDefs.get(0));
+	public void shouldCompileOneFileToFilesContents() throws Exception {
+		rootFiles.add(noDeps);
+		assertEquals(noDeps.readToString().trim(), concat().trim());
 	}
 	
 	@Test
-	public void findClassDependenciesForRequireDirective() {
-		List<String> classDefs = new CoffeescriptConcat().findClassDependencies("#= require ClassName");
-		assertEquals("ClassName", classDefs.get(0));
+	public void shouldNotIncludeUnneedFiles() throws Exception {
+		rootFiles.add(noDeps);
+		includeFiles.add(animal);
+		assertEquals(noDepsString.trim(), concat().trim());
 	}
 	
 	@Test
-	public void findFileDependencies() {
-		List<String> classDefs = new CoffeescriptConcat().findFileDependencies("#= require <Filename.coffee>\n() ->  ");
-		assertEquals("Filename", classDefs.get(0));
-	}
-	@Test
-	public void findFileDependenciesNoSpace() {
-		List<String> classDefs = new CoffeescriptConcat().findFileDependencies("#= require<Filename.coffee>");
-		assertEquals("Filename", classDefs.get(0));
+	public void shouldIncludeClassDependecy() throws Exception {
+		rootFiles.add(snake);
+		includeFiles.add(animal);
+		assertEquals(animalString + "\n" + snakeString, concat().trim());
 	}
 	
 	@Test
-	public void findFileDependenciesNoSuffix() {
-		List<String> classDefs = new CoffeescriptConcat().findFileDependencies("#= require <Filename>\n() ->  ");
-		assertEquals("Filename", classDefs.get(0));
+	public void shouldIncludeClassDependencyChainInInheritanceOrder() throws Exception {
+		rootFiles.add(python);
+		includeFiles.add(snake);
+		includeFiles.add(animal);
+		assertEquals(animalString + "\n" + snakeString +  "\n" + pythonString.trim(), concat().trim());
 	}
+	
+	@Test
+	public void requireDirectiveForFileAndClass() throws Exception {
+		rootFiles.add(requireDirective);
+		includeFiles.add(animal);
+		includeFiles.add(snake);
+		includeFiles.add(noDeps);
+		includeFiles.add(python);
+		assertEquals(animalString + "\n" + noDepsString.trim(), concat().trim());
+	}
+
+	private VirtualFile classpathFile(String fileName) {
+		URL url = Resources.getResource(this.getClass(), fileName);
+		return VirtualFile.fromURL(fileName, url);
+	}
+
+	private String concat() throws IOException {
+		return concat.concatenate(rootFiles, includeFiles);
+	}
+	
 }

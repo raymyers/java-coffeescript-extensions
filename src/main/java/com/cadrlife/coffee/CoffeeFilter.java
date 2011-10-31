@@ -20,10 +20,11 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
-import com.cadrlife.coffee.concat.CoffeescriptConcat;
+import com.cadrlife.coffee.concat.CoffeescriptConcatenate;
 import com.cadrlife.coffee.jcoffeescript.JCoffeeScriptCompileException;
 import com.cadrlife.coffee.jcoffeescript.JCoffeeScriptCompiler;
 import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.io.CharStreams;
@@ -42,13 +43,14 @@ import com.google.common.io.CharStreams;
  * 
  * concatenateName. Optional. Path that maps to the concatenated source code.
  * ex. /js/app.js
+ * 
+ * NOT YET IMPLEMENTED: cacheUpdateSeconds. Optional. How often to force an update of the compiled coffeescript cache
+ * ex. 600
  */
 public class CoffeeFilter implements Filter {
 	private String concatenateRoot = "";
 	private String concatenateName = "";
 	private String coffeeFiles = "";
-	// Filter will diable itself if not configured to do anything useful.
-	private boolean enabled = true;
 	private boolean concatenationEnabled;
 
 	private static final class CompiledCoffee {
@@ -83,17 +85,19 @@ public class CoffeeFilter implements Filter {
 		coffeeFiles = filterConfig.getInitParameter("coffeeFiles");
 		concatenateRoot = filterConfig.getInitParameter("concatenateRoot");
 		concatenateName = filterConfig.getInitParameter("concatenateName");
-		if (Strings.isNullOrEmpty(coffeeFiles)) {
-			this.enabled = false;
-			// TODO: Log this
-		}
+		Preconditions.checkArgument(!Strings.isNullOrEmpty(coffeeFiles), "CoffeeFilter requires the 'coffeeFiles' parameter");
 		concatenationEnabled = !(Strings.isNullOrEmpty(concatenateName) || Strings
 				.isNullOrEmpty(concatenateRoot));
 	}
+	
+	public void destroy() {
+
+	}
+
 
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
-		if (!enabled) {
+		if (!isEnabled()) {
 			chain.doFilter(request, response);
 			return;
 		}
@@ -114,7 +118,7 @@ public class CoffeeFilter implements Filter {
 		if (concatenationEnabled && requestURI.equals(concatenateName)) {
 			response.setContentType("text/javascript");
 			String coffee = concatenateResourcesAsString(
-					rootCoffee(), allAppCoffee());
+					rootCoffeePaths(), allCoffeePaths());
 			String compiledCoffee = compileCoffeescript(coffeeRequestURI, coffee);
 			response.getOutputStream().print(compiledCoffee);
 			cache.put(requestURI,
@@ -142,6 +146,14 @@ public class CoffeeFilter implements Filter {
 		// Render a nice error page?
 	}
 
+	/*
+	 * Determines whether the filter should attempt to answer requests.
+	 * This could be overridden by a child class to disable dynamic compilation in production.
+	 */
+	protected boolean isEnabled() {
+		return true;
+	}
+
 	private String compileCoffeescript(String requestURI, String coffee) {
 		try {
 			return getCompiler().compile(coffee);
@@ -152,7 +164,7 @@ public class CoffeeFilter implements Filter {
 		}
 	}
 
-	private Iterable<String> rootCoffee()
+	private Iterable<String> rootCoffeePaths()
 			throws IOException {
 		ServletContextPatternResolver resolver = new ServletContextPatternResolver(
 				servletContext);
@@ -160,7 +172,7 @@ public class CoffeeFilter implements Filter {
 		return resolver.getResourcePaths(concatenateRoot);
 	}
 
-	private Iterable<String> allAppCoffee()
+	private Iterable<String> allCoffeePaths()
 			throws IOException {
 		ServletContextPatternResolver resolver = new ServletContextPatternResolver(
 				servletContext);
@@ -177,7 +189,7 @@ public class CoffeeFilter implements Filter {
 
 	private String concatenateFilesAsString(Iterable<VirtualFile> rootFiles,
 			Iterable<VirtualFile> includeFiles) throws IOException {
-		return new CoffeescriptConcat().concatenate(rootFiles, includeFiles);
+		return new CoffeescriptConcatenate().concatenate(rootFiles, includeFiles);
 	}
 
 	private Iterable<VirtualFile> resourcesToFiles(Iterable<String> rootResources) {
@@ -196,10 +208,6 @@ public class CoffeeFilter implements Filter {
 		Iterable<VirtualFile> rootFiles = Iterables.transform(rootResources,
 				resourceToFile);
 		return rootFiles;
-	}
-
-	public void destroy() {
-
 	}
 
 	/**
