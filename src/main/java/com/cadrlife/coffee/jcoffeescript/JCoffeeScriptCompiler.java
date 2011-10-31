@@ -39,7 +39,7 @@ public class JCoffeeScriptCompiler {
 
 	public JCoffeeScriptCompiler(Collection<Option> options) {
         ClassLoader classLoader = getClass().getClassLoader();
-        InputStream inputStream = classLoader.getResourceAsStream("com/cadrlife/mvc/coffee/coffee-script-1.1.2.js");
+        InputStream inputStream = classLoader.getResourceAsStream("com/cadrlife/coffee/coffee-script-1.1.2.js");
         try {
             try {
                 Reader reader = new InputStreamReader(inputStream, "UTF-8");
