@@ -14,19 +14,8 @@
  * limitations under the License.
  */
 
-package com.cadrlife.mvc.coffee.jcoffeescript;
+package com.cadrlife.coffee.jcoffeescript;
 
-import java.util.Collection;
-
-
-public class Options {
-    private final String javaScriptOptions;
-
-    public Options(Collection<Option> options) {
-        javaScriptOptions = String.format("{bare: %b}", options.contains(Option.BARE));
-    }
-
-    public String toJavaScript() {
-        return javaScriptOptions;
-    }
+public enum Option {
+	BARE
 }

@@ -21,8 +21,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
 import com.cadrlife.coffee.concat.CoffeescriptConcat;
-import com.cadrlife.mvc.coffee.jcoffeescript.JCoffeeScriptCompileException;
-import com.cadrlife.mvc.coffee.jcoffeescript.JCoffeeScriptCompiler;
+import com.cadrlife.coffee.jcoffeescript.JCoffeeScriptCompileException;
+import com.cadrlife.coffee.jcoffeescript.JCoffeeScriptCompiler;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;

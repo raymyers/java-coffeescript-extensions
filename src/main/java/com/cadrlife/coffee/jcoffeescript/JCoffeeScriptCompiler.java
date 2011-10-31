@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.cadrlife.mvc.coffee.jcoffeescript;
+package com.cadrlife.coffee.jcoffeescript;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.JavaScriptException;
