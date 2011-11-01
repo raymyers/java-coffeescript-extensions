@@ -1,8 +1,7 @@
-package com.cadrlife.coffee;
+package com.cadrlife.coffee.compile;
 
 import java.util.Arrays;
 import java.util.List;
-//import play.vfs.VirtualFile;
  
 /**
  * A java compilation error

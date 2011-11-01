@@ -20,6 +20,43 @@ import static com.google.common.base.Predicates.not;
 public class CoffeescriptConcatenate {
 	CoffeescriptDependencyScanner dependencyScanner = new CoffeescriptDependencyScanner();
 	
+	
+	public String concatenate(Iterable<VirtualFile> rootFiles, Iterable<VirtualFile> includeFiles) throws IOException {
+		List<FileDef> deps = mapDependencies(rootFiles, includeFiles);
+		String output = concatFiles(rootFiles, deps);
+		return dependencyScanner.removeIncludeDirectives(output);
+	}
+	
+	/* Given a list of files and their class/dependency information,
+	 * traverse the list and put them in an order that satisfies dependencies. 
+	 * Walk through the list, taking each file and examining it for dependencies.
+	 * If it doesn't have any it's fit to go on the list.  If it does, find the file(s)
+	 * that contain the classes dependencies.  These must go first in the hierarchy.
+	 */
+	public String concatFiles(Iterable<VirtualFile> sourceFiles, final List<FileDef> fileDefs) {
+		
+		final Iterable<String> sourceFileNames = collectFilenames(sourceFiles);
+ 		Stack<FileDef> sourceFileDefs = new Stack<FileDef>();
+ 		sourceFileDefs.addAll(findFileDefsWithNames(fileDefs, sourceFileNames));
+ 		
+ 		List<FileDef> fileDefStack = Lists.newArrayList();
+ 		// reuse dependencyResolver to preserve usedfiles list 
+ 		DependencyResolver dependencyResolver = new DependencyResolver(fileDefs);
+ 		while (!sourceFileDefs.isEmpty()) {
+ 			FileDef nextFileDef = sourceFileDefs.pop();
+ 			
+ 			
+			List<FileDef> resolvedDef = dependencyResolver.resolve(nextFileDef);
+ 			fileDefStack.addAll(resolvedDef);
+ 		}
+ 		StringBuilder contentBuilder = new StringBuilder();
+ 		for (FileDef nextFileDef : fileDefStack) {
+ 			contentBuilder.append(nextFileDef.getContents() + '\n');
+ 		}
+ 		return contentBuilder.toString();		
+
+	}
+	
 	/* Given a list of source files, 
 	 * create a list of all files with the classes they contain and the classes 
 	 * those classes depend on.
@@ -47,33 +84,6 @@ public class CoffeescriptConcatenate {
 		return fileName.replaceAll("\\.coffee$", "");
 	}
 	
-	/* Given a list of files and their class/dependency information,
-	 * traverse the list and put them in an order that satisfies dependencies. 
-	 * Walk through the list, taking each file and examining it for dependencies.
-	 * If it doesn't have any it's fit to go on the list.  If it does, find the file(s)
-	 * that contain the classes dependencies.  These must go first in the hierarchy.
-	 */
-	public String concatFiles(Iterable<VirtualFile> sourceFiles, final List<FileDef> fileDefs) {
-		
-		final Iterable<String> sourceFileNames = collectFilenames(sourceFiles);
- 		Stack<FileDef> sourceFileDefs = new Stack<FileDef>();
- 		sourceFileDefs.addAll(findFileDefsWithNames(fileDefs, sourceFileNames));
- 		
- 		List<FileDef> fileDefStack = Lists.newArrayList();
- 		while (!sourceFileDefs.isEmpty()) {
- 			FileDef nextFileDef = sourceFileDefs.pop();
- 			
- 			List<FileDef> resolvedDef = new DependencyResolver(fileDefs).resolve(nextFileDef);
- 			fileDefStack.addAll(resolvedDef);
- 		}
- 		StringBuilder contentBuilder = new StringBuilder();
- 		for (FileDef nextFileDef : fileDefStack) {
- 			contentBuilder.append(nextFileDef.getContents() + '\n');
- 		}
- 		return contentBuilder.toString();		
-
-	}
-
 	private Collection<FileDef> findFileDefsWithNames(List<FileDef> fileDefs,
 			final Iterable<String> sourceFileNames) {
 		return Collections2.filter(fileDefs, new Predicate<FileDef>() {
@@ -94,10 +104,6 @@ public class CoffeescriptConcatenate {
 		return sourceFileNames;
 	}
 	
-	public String concatenate(Iterable<VirtualFile> rootFiles, Iterable<VirtualFile> includeFiles) throws IOException {
-		List<FileDef> deps = mapDependencies(rootFiles, includeFiles);
-		String output = concatFiles(rootFiles, deps);
-		return dependencyScanner.removeDirectives(output);
-	}
+	
 	
 }

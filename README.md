@@ -1,6 +1,6 @@
 # Java Coffeescript Extensions
 
-Utilities for Java projects using coffeescript
+Utilities for Java projects using coffeescript.
 
 Features provided:
 

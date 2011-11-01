@@ -74,7 +74,7 @@ class CoffeescriptDependencyScanner {
 	/*
 	 * Remove all '#=require' directives, used after the files have been included.
 	 */
-	public String removeDirectives(String input) {
+	public String removeIncludeDirectives(String input) {
 		String strippedInput = fileDirectivePattern.matcher(input).replaceAll("");
 		return classDirectivePattern.matcher(strippedInput).replaceAll("");
 	}

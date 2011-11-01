@@ -13,7 +13,7 @@ import com.google.common.io.Resources;
 
 import static org.junit.Assert.assertEquals;
 
-public class CoffeescriptConcatTest {
+public class CoffeescriptConcatenateTest {
 
 	CoffeescriptConcatenate concat;
 	List<VirtualFile> rootFiles;
@@ -57,9 +57,16 @@ public class CoffeescriptConcatTest {
 	}
 	
 	@Test
-	public void shouldNotIncludeUnneedFiles() throws Exception {
+	public void shouldNotIncludeUnneededFiles() throws Exception {
 		rootFiles.add(noDeps);
 		includeFiles.add(animal);
+		assertEquals(noDepsString.trim(), concat().trim());
+	}
+	
+	@Test
+	public void shouldNotIncludeRootFileTwice() throws Exception {
+		rootFiles.add(noDeps);
+		includeFiles.add(noDeps);
 		assertEquals(noDepsString.trim(), concat().trim());
 	}
 	
